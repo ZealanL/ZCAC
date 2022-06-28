@@ -23,6 +23,12 @@ Current compression results are about 5-15% of the original file size, with almo
   - *Compression Ratio: **7.15%***
 - [Decoded Audio from ZCAC (9,031KB)](audio_examples/violin_solo/violin_solo_decoded.wav?raw=true)
 
+**Single Piano Note:**
+- [Original Audio (682KB)](audio_examples/piano_note/piano_note_original.wav?raw=true)
+- [Encoded ZCAC file (23KB)](audio_examples/piano_note/piano_note_encoded.zcac?raw=true)
+  - *Compression Ratio: **3.37%***
+- [Decoded Audio from ZCAC (682KB)](audio_examples/piano_note/piano_note_decoded.wav?raw=true)
+
 **White Noise:** (WORST-CASE SCENARIO!) 
 - [Original Audio (517KB)](audio_examples/white_noise/white_noise_original.wav?raw=true)
 - [Encoded ZCAC file (124KB)](audio_examples/white_noise/white_noise_encoded.zcac?raw=true)
