@@ -20,4 +20,4 @@ Current compression results are about 5-10% of the original file size, with almo
 - [Decoded Audio from ZCAC (9,031KB)](audio_examples/violin_solo/violin_solo_decoded.wav?raw=true)
 
 # Libraries Used
-- ZLIB for end-result compression
+- ZLIB for end-result compression (https://zlib.net/)
