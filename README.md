@@ -3,7 +3,7 @@ ZCAC (Zealan's Compressed Audio Codec) is a custom audio compression algorithm/f
 
 It currently is in very early development/testing, and only compresses .WAV files.
 
-Current compression results are about 5-10% of the original file size, with almost no noticable difference in audio quality.
+Current compression results are about 5-15% of the original file size, with almost no noticable difference in audio quality.
 
 **How ZCAC works (for now):**
 - Load a .WAV file and determine the raw signal data for each audio channel
