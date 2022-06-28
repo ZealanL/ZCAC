@@ -13,7 +13,7 @@ Current compression results are about 5-10% of the original file size, with almo
 
 **Planned future features:**
 - Adjustable quality/compression settings
-- Adaptive bitrate encoding for individual FFT channels
+- Adaptive bitrate encoding for individual FFT frequency buckets
 - Custom Huffman tree compression for FFT data
 
 # Compression Examples
