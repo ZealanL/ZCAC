@@ -217,17 +217,17 @@ struct DataWriter {
 			// Write each byte with our bit offset
 			for (int i = 0; i < amount; i++) {
 				// Get current byte from data
-				byte b = ((byte*)data)[amount];
+				byte b = ((byte*)data)[i];
 
 				// Fill remainder of current byte with left bits of data
-				curByteBuf |= (b >> curBitOffset);
+				curByteBuf |= (b << curBitOffset);
 
 				// Finish curByte 
 				resultBytes.push_back(curByteBuf);
 				curByteBuf = 0;
 
 				// Fill begining of current byte with right bits of data
-				curByteBuf = (b << curBitOffset);
+				curByteBuf = (b >> (8 - curBitOffset));
 			}
 		}
 		
