@@ -11,6 +11,11 @@ Current compression results are about 5-10% of the original file size, with almo
 - Reduce the size of the Fourier blocks by converting each floating point value to a small integer
 - Encode the results and compress everything with ZLIB
 
+**Planned future features:**
+- Adjustable quality/compression settings
+- Adaptive bitrate encoding for individual FFT channels
+- Custom Huffman tree compression for FFT data
+
 # Compression Examples
 **Violin Solo Excerpt:** 
 
