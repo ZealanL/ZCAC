@@ -18,11 +18,16 @@ Current compression results are about 5-15% of the original file size, with almo
 
 # Compression Examples
 **Violin Solo Excerpt:** 
-
 - [Original Audio (9,031KB)](audio_examples/violin_solo/violin_solo_original.wav?raw=true)
 - [Encoded ZCAC file (646KB)](audio_examples/violin_solo/violin_solo_encoded.zcac?raw=true)
   - *Compression Ratio: **7.15%***
 - [Decoded Audio from ZCAC (9,031KB)](audio_examples/violin_solo/violin_solo_decoded.wav?raw=true)
+
+**White Noise:** (WORST-CASE SCENARIO!) 
+- [Original Audio (517KB)](audio_examples/white_noise/white_noise_original.wav?raw=true)
+- [Encoded ZCAC file (124KB)](audio_examples/white_noise/white_noise_encoded.zcac?raw=true)
+  - *Compression Ratio: **23.9%***
+- [Decoded Audio from ZCAC (517KB)](audio_examples/white_noise/white_noise_decoded.wav?raw=true)
 
 # Libraries Used
 - ZLIB for end-result compression (https://zlib.net/)
