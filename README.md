@@ -10,3 +10,11 @@ Current compression results are about 5-10% of the original file size, with almo
 - Convert the raw signal data into Fourier-transformed segments (blocks)
 - Reduce the size of the Fourier blocks by converting each floating point value to a small integer
 - Compress and store the results
+
+# Compression Examples
+**Violin Solo Excerpt:** 
+
+- [Original Audio (9,031KB)](audio_examples/violin_solo/violin_solo_original.wav?raw=true)
+- [Encoded ZCAC file (646KB)](audio_examples/violin_solo/violin_solo_encoded.zcac?raw=true)
+  - *Compression Ratio: **7.15%***
+- [Decoded Audio from ZCAC (9,031KB)](audio_examples/violin_solo/violin_solo_decoded.wav?raw=true)
