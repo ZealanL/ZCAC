@@ -15,14 +15,14 @@
 #define ZCAC_FFT_PAD (ZCAC_FFT_SIZE / 64)
 
 // Bits per FFT integer
-#define ZCAC_INT_VAL_BITS 8 // Optimal for later compression
+#define ZCAC_INT_VAL_BITS 9
 #define ZCAC_INT_VAL_MAX ((1<<ZCAC_INT_VAL_BITS) - 1)
 
 // FFT size for storing our FFT result (due to hermitian symmetry)
 #define ZCAC_FFT_SIZE_STORAGE (ZCAC_FFT_SIZE / 2 + 1)
 
 // Must be a power of two
-SASSERT(!(ZCAC_FFT_SIZE & (ZCAC_FFT_SIZE - 1)));
+SASSERT(!(ZCAC_FFT_SIZE& (ZCAC_FFT_SIZE - 1)));
 
 #define ZCAC_MAGIC 'CACZ' // "ZCAC"
 
