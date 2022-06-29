@@ -1,7 +1,7 @@
 #pragma once
 #include "../Framework.h"
 
-#include "../DataStreams.h"
+#include "../DataStreams/DataStreams.h"
 
 // For reading/writing .wav (WAVE) files
 // References:

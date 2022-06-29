@@ -1,7 +1,5 @@
 #include "WaveIO.h"
 
-#include "../DataStreams.h"
-
 // Backwards string magic IDs as uint32s
 constexpr uint32 RIFF_ID = 'FFIR', WAVE_ID = 'EVAW', FMT_ID = ' tmf', DATA_ID = 'atad';
 

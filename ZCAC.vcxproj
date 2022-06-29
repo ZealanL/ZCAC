@@ -158,13 +158,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\DataStreams.h" />
+    <ClInclude Include="src\Compression\Huffman.h" />
+    <ClInclude Include="src\DataStreams\DataStreams.h" />
     <ClInclude Include="src\Framework.h" />
     <ClInclude Include="src\Math\Math.h" />
     <ClInclude Include="src\WaveIO\WaveIO.h" />
     <ClInclude Include="src\ZCAC\ZCAC.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Compression\Huffman.cpp" />
+    <ClCompile Include="src\DataStreams\DataStreams.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Math\Math.cpp" />
     <ClCompile Include="src\WaveIO\WaveIO.cpp" />

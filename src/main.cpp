@@ -7,7 +7,6 @@
 #include "WaveIO/WaveIO.h"
 #include "Math/Math.h"
 #include "ZCAC/ZCAC.h"
-#include "DataStreams.h"
 
 vector<byte> FileToBytes(string path) {
 	vector<byte> out;
