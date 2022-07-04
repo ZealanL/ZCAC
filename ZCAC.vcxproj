@@ -158,7 +158,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\Compression\Huffman.h" />
+    <ClInclude Include="src\Compression\BitRepeater\BitRepeater.h" />
+    <ClInclude Include="src\Compression\Huffman\Huffman.h" />
     <ClInclude Include="src\DataStreams\DataStreams.h" />
     <ClInclude Include="src\Framework.h" />
     <ClInclude Include="src\Math\Math.h" />
@@ -166,7 +167,8 @@
     <ClInclude Include="src\ZCAC\ZCAC.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Compression\Huffman.cpp" />
+    <ClCompile Include="src\Compression\BitRepeater\BitRepeater.cpp" />
+    <ClCompile Include="src\Compression\Huffman\Huffman.cpp" />
     <ClCompile Include="src\DataStreams\DataStreams.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Math\Math.cpp" />
