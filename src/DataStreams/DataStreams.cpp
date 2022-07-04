@@ -67,13 +67,12 @@ vector<byte> DataReader::Decompress() {
 	curByteIndex = backupCurByteIndex;
 
 	if (result != Z_OK) {
-		ASSERT(false);
 		free(decompressedBuffer);
 		return vector<byte>();
 	} else {
-		auto result = vector<byte>(decompressedBuffer, decompressedBuffer + decompressedSize);
+		auto resultBytes = vector<byte>(decompressedBuffer, decompressedBuffer + decompressedSize);
 		free(decompressedBuffer);
-		return result;
+		return resultBytes;
 	}
 }
 
@@ -100,7 +99,26 @@ void DataWriter::WriteBytes(const void* data, size_t amount) {
 	}
 }
 
+bool DataWriter::GetBitAt(size_t bitIndex) {
+	size_t byteIndex = bitIndex / 8, bitOffset = bitIndex % 8;
+
+	if (byteIndex < resultBytes.size()) {
+		return resultBytes[byteIndex] & (1 << bitOffset);
+	} else if (byteIndex == resultBytes.size() && bitOffset <= curBitOffset) {
+		return curByteBuf & (1 << bitOffset);
+	} else {
+		ASSERT(false);
+		return 0;
+	}
+}
+
 bool DataWriter::Compress() {
+	if (curBitOffset) {
+		// Finish in-progress byte
+		resultBytes.push_back(curByteBuf);
+		curBitOffset = 0;
+	}
+
 	size_t compressedMaxSize = compressBound(resultBytes.size());
 	byte* compressedBytes = (byte*)malloc(compressedMaxSize);
 
@@ -130,8 +148,9 @@ bool DataWriter::WriteToFile(string path) {
 	if (!outFile.good())
 		return false;
 
-	if (GetBitSize() >= 8) { // We have full bytes to write
-		outFile.write((char*)&resultBytes.front(), GetByteSize());
+	size_t bitSize = GetBitSize();
+	if (bitSize >= 8) { // We have full bytes to write
+		outFile.write((char*)&resultBytes.front(), resultBytes.size());
 	}
 
 	if (curBitOffset) {

@@ -36,7 +36,7 @@ struct DataReader {
 	}
 
 	size_t GetNumBitsRead() {
-		return GetNumBytesRead() + curBitOffset;
+		return GetNumBytesRead() * 8 + curBitOffset;
 	}
 
 	size_t AmountBitsLeft() {
@@ -51,9 +51,11 @@ struct DataReader {
 
 	template <typename T>
 	T ReadBits(size_t bitCount) {
-		byte result[sizeof(T)] = {};
+		ASSERT(bitCount > 0);
 		ASSERT(bitCount <= (sizeof(T) * 8));
 
+		byte result[sizeof(T)] = {};
+	
 		// Amount of full bytes to read
 		size_t numFullBytes = bitCount / 8;
 
@@ -100,6 +102,14 @@ struct DataWriter {
 		resultBytes = initialBytes;
 	}
 
+	void Append(const DataWriter& other) {
+		if (!other.resultBytes.empty())
+			WriteBytes(&other.resultBytes.front(), other.resultBytes.size());
+
+		if (other.curBitOffset)
+			WriteBits(other.curByteBuf, other.curBitOffset);
+	}
+
 	void WriteBit(bool val) {
 		curByteBuf |= (val << curBitOffset);
 		curBitOffset++;
@@ -114,7 +124,7 @@ struct DataWriter {
 
 	template <typename T>
 	void WriteBits(const T& data, size_t bitCount) {
-
+		ASSERT(bitCount > 0);
 		ASSERT(bitCount <= (sizeof(T) * 8));
 
 		// Amount of full bytes to write
@@ -144,6 +154,7 @@ struct DataWriter {
 		WriteBytes(&data, sizeof(T));
 	}
 
+	// Includes possible partially-written byte
 	size_t GetByteSize() const {
 		return resultBytes.size() + (curBitOffset ? 1 : 0);
 	}
@@ -151,6 +162,9 @@ struct DataWriter {
 	size_t GetBitSize() const {
 		return (resultBytes.size() * 8) + curBitOffset;
 	}
+
+	// Will just return 0 if index is out-of-bounds
+	bool GetBitAt(size_t bitIndex);
 
 	bool Compress();
 
