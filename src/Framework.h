@@ -69,3 +69,15 @@ typedef uint8_t byte;
 #else
 #define DLOG(s)
 #endif
+
+// Framework functions
+namespace FW {
+	// Returns the minimum number of bits needed to store an integer
+	template <typename T>
+	byte MinBitsNeeded(T val) {
+		byte bitCount = 1;
+		for (; val > 1; bitCount++)
+			val >>= 1;
+		return bitCount;
+	}
+}
