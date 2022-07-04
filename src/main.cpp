@@ -79,8 +79,11 @@ int main(int argc, char* argv[]) {
 	string outDecodedPath = "test_decoded.wav";
 
 	{ // Encode to file
+
+		ZCAC::Flags flags = ZCAC::DEFAULT_FLAGS;
+
 		DataWriter testOutZCAC;
-		if (ZCAC::Encode(audioInfo, testOutZCAC)) {
+		if (ZCAC::Encode(audioInfo, testOutZCAC, flags)) {
 			testOutZCAC.WriteToFile(outEncodedPath);
 			LOG("Encoded successfully! Writing to \"" << outEncodedPath << "\"...");
 		} else {
