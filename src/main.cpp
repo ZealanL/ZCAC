@@ -80,10 +80,10 @@ int main(int argc, char* argv[]) {
 
 	{ // Encode to file
 
-		ZCAC::Flags flags = ZCAC::DEFAULT_FLAGS;
+		ZCAC::Config config;
 
 		DataWriter testOutZCAC;
-		if (ZCAC::Encode(audioInfo, testOutZCAC, flags)) {
+		if (ZCAC::Encode(audioInfo, testOutZCAC, config)) {
 			testOutZCAC.WriteToFile(outEncodedPath);
 			LOG("Encoded successfully! Writing to \"" << outEncodedPath << "\"...");
 		} else {
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 	{ // Decode from file
 		vector<byte> zcacFileBytes = FileToBytes(outEncodedPath);
 		DataReader testInZCAC = DataReader(zcacFileBytes);
-
+		
 		WaveIO::AudioInfo audioInfoIn;
 		if (ZCAC::Decode(testInZCAC, audioInfoIn)) {
 			LOG("Decoded successfully! Writing to \"" << outDecodedPath << "\"...");

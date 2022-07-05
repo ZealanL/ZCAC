@@ -1,6 +1,7 @@
 #include "ZCAC.h"
 #include "../Compression/Huffman/Huffman.h"
 #include "../Compression/BitRepeater/BitRepeater.h"
+#include "Config/Config.h"
 
 ZCAC::FFTBlock ZCAC::FFTBlock::FromAudioData(const float* audioData) {
 
@@ -99,12 +100,14 @@ struct ZCAC_Header {
 };
 #pragma pack(pop)
 
-bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, ZCAC::Flags flags) {
+bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Config config) {
 	// Make header
 	ZCAC_Header header;
 	header.freq = waveAudioInfo.freq;
 	header.numChannels = waveAudioInfo.channelData.size();
 	header.samplesPerChannel = waveAudioInfo.sampleCount;
+
+	Flags flags = config.GetFlags();
 	header.flags = flags;
 
 	for (auto& channel : waveAudioInfo.channelData) {
@@ -160,7 +163,7 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, ZCAC:
 						float valF = val / (float)ZCAC_INT_VAL_MAX;
 						float dev = abs(valF - avg);
 
-						bool shouldSkip = (dev < (stdv / 5)); // TODO: Don't use hardcoded std portion
+						bool shouldSkip = (dev < (stdv / 4)); // TODO: Don't use hardcoded std portion
 
 						omitValLookup[totalLookupIndex] = shouldSkip;
 
@@ -237,9 +240,9 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, ZCAC:
 
 		DLOG("Huffman compression ratio: " << huffCompressionRatio);
 
-		bool encodeHuffman = huffCompressionRatio < 1;
+		bool encodeHuffman = huffCompressionRatio < 1 && false;
 
-		if (encodeHuffman) {
+		if (encodeHuffman && false) {
 			DLOG(" > Encoding via Huffman...");
 			out.WriteBit(1);
 
@@ -250,7 +253,6 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, ZCAC:
 		}
 
 		size_t valsWritten = 0;
-
 		// part/slot/block
 		for (int iPart = 0, totalIndex = 0; iPart < 2; iPart++) {
 			for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++) {
@@ -260,6 +262,7 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, ZCAC:
 						// part/block/slot
 						size_t omitLookupIndex =
 							(iPart * (TOTAL_VAL_AMOUNT / 2)) + (iBlock * ZCAC_FFT_SIZE_STORAGE) + iSlot;
+
 						if (omitValLookup[omitLookupIndex])
 							continue;
 					}
@@ -275,8 +278,6 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, ZCAC:
 				}
 			}
 		}
-
-		DLOG("Wrote a total of " << valsWritten << " FFT vals.");
 
 		delete[] blockDeltas;
 
@@ -372,6 +373,11 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 				return false; // Failed to read huffman frequency map
 
 			huffTree.SetFreqMap(huffFreqMap);
+		} else {
+			if (!(header.flags & FLAG_OMIT_FFT_VALS)) {
+				size_t valsRemaining = in.AmountBitsLeft() / ZCAC_INT_VAL_BITS;
+				ASSERT(valsRemaining == TOTAL_VAL_AMOUNT);
+			}
 		}
 
 		size_t valsRead = 0;

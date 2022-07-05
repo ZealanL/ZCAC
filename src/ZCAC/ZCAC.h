@@ -3,6 +3,8 @@
 #include "../Math/Math.h"
 #include "../WaveIO/WaveIO.h"
 
+#include "Config/Config.h"
+
 // Version number
 #define ZCAC_VERSION_MAJOR 0
 #define ZCAC_VERSION_MINOR 0
@@ -36,10 +38,7 @@ namespace ZCAC {
 
 		FLAG_ZLIB_COMPRESSION = (1 << 0), // Everything will be compressed via ZLIB
 		FLAG_OMIT_FFT_VALS = (1 << 1), // Don't write FFT vals that aren't needed
-
-		DEFAULT_FLAGS
 	};
-
 	typedef uint32 Flags;
 
 	// Special version of std::complex that uses integers of a dynamic length for real/imag
@@ -81,6 +80,6 @@ namespace ZCAC {
 		float GetStandardDeviationF();
 	};
 
-	bool Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Flags flags = DEFAULT_FLAGS);
+	bool Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Config config);
 	bool Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut);
 }
