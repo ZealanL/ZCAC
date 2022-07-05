@@ -69,7 +69,8 @@ vector<byte> DataReader::Decompress() {
 		return vector<byte>();
 	}
 
-	int result = uncompress(decompressedBuffer, &decompressedSize, data + curByteIndex, GetNumBytesLeft());
+	uLong compressedLen = GetNumBytesLeft();
+	int result = uncompress2(decompressedBuffer, &decompressedSize, data + curByteIndex, &compressedLen);
 
 	curByteIndex = backupCurByteIndex;
 
@@ -79,7 +80,7 @@ vector<byte> DataReader::Decompress() {
 	} else {
 		auto resultBytes = vector<byte>(decompressedBuffer, decompressedBuffer + decompressedSize);
 		free(decompressedBuffer);
-		curByteIndex += decompressedSize;
+		curByteIndex += compressedLen;
 		return resultBytes;
 	}
 }
