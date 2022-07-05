@@ -154,7 +154,7 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 			omitValLookup = new bool[TOTAL_VAL_AMOUNT];
 
 			// part/block/slot
-			for (int i = 0, totalLookupIndex = 0; i < 2; i++) {
+			for (int iPart = 0, totalLookupIndex = 0; iPart < 2; iPart++) {
 				for (int iBlock = 0; iBlock < blocks.size(); iBlock++) {
 					FFTBlock& block = blocks[iBlock];
 					float
@@ -163,8 +163,7 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 
 					for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++, totalLookupIndex++) {
 						ComplexInts& curComplexInts = blocks[iBlock].data[iSlot];
-						uint16 val = i ? curComplexInts.imag : curComplexInts.real;
-						float valF = val / (float)ZCAC_INT_VAL_MAX;
+						float valF = blocks[iBlock].data[iSlot][iPart] / (float)ZCAC_INT_VAL_MAX;
 						float dev = abs(valF - avg);
 
 						bool shouldSkip = (dev < (stdv / 4)); // TODO: Don't use hardcoded std portion
