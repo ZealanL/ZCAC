@@ -63,7 +63,8 @@ vector<byte> DataReader::Decompress() {
 	size_t backupCurByteIndex = curByteIndex;
 
 	uLong decompressedSize = Read<uint32>();
-	byte* decompressedBuffer = (byte*)malloc(decompressedSize);
+	
+	auto decompressedBuffer = ScopeMem(decompressedSize);
 	if (!decompressedBuffer) {
 		curByteIndex = backupCurByteIndex;
 		return vector<byte>();
@@ -75,11 +76,9 @@ vector<byte> DataReader::Decompress() {
 	curByteIndex = backupCurByteIndex;
 
 	if (result != Z_OK) {
-		free(decompressedBuffer);
 		return vector<byte>();
 	} else {
-		auto resultBytes = vector<byte>(decompressedBuffer, decompressedBuffer + decompressedSize);
-		free(decompressedBuffer);
+		auto resultBytes = vector<byte>((byte*)decompressedBuffer, decompressedBuffer + decompressedSize);
 		curByteIndex += compressedLen;
 		return resultBytes;
 	}
@@ -132,14 +131,13 @@ bool DataWriter::Compress() {
 	AlignToByte();
 
 	size_t compressedMaxSize = compressBound(resultBytes.size());
-	byte* compressedBytes = (byte*)malloc(compressedMaxSize);
+	ScopeMem compressedBytes = ScopeMem(compressedMaxSize);
 
 	uLong compressedSize = compressedMaxSize;
 	int result = compress2(compressedBytes, &compressedSize, &resultBytes.front(), resultBytes.size(), Z_BEST_COMPRESSION);
 
 	if (result != Z_OK) {
 		ASSERT(false);
-		free(compressedBytes);
 		return false;
 	}
 
@@ -148,7 +146,6 @@ bool DataWriter::Compress() {
 	Write<uint32>(originalSize);
 	WriteBytes(compressedBytes, compressedSize);
 
-	free(compressedBytes);
 	return true;
 }
 

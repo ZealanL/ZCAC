@@ -166,6 +166,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\ScopeMem\ScopeMem.h" />
     <ClInclude Include="src\ZCAC\Config\Config.h" />
     <ClInclude Include="src\Compression\BitRepeater\BitRepeater.h" />
     <ClInclude Include="src\Compression\Huffman\Huffman.h" />

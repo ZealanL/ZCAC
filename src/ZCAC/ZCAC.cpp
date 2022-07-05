@@ -145,17 +145,18 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 
 		// Create block deltas - these will store the deltas of each FFT slot from one block to the next
 		// Order is part/slot/block, because FFT values of a specific slot tend to change semi-consistently from one block to another
-		auto blockDeltas = new uint16[TOTAL_VAL_AMOUNT];
+		ScopeMem<uint16> blockDeltas = ScopeMem<uint16>(TOTAL_VAL_AMOUNT);
+		blockDeltas.MakeZero();
 
 		// If we are omitting FFT vals, this will store whether or not each FFT value is omitted
 		// Order is part/block/slot because this produces long sets of repeated bits, which makes them easier to compress
-		bool* omitValLookup = NULL;
+		ScopeMem<bool> omitValLookup;
 
 		// Make FFT val omission lookup table 
 		if (flags & FLAG_OMIT_FFT_VALS) {
 			// Create lookup table
 			size_t totalValsOmitted = 0;
-			omitValLookup = new bool[TOTAL_VAL_AMOUNT];
+			omitValLookup.Alloc(TOTAL_VAL_AMOUNT);
 
 			// Division of STDV a value must be within to be skipped
 			float stdvDiv = 4 + (config.quality * 1.7f);
@@ -260,9 +261,6 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 			size_t sizeBefore = out.GetByteSize();
 			
 			if (!ValueArrayEncoder::Encode(tempReader, ZCAC_INT_VAL_BITS, valsWritten, out)) {
-				
-				delete[] blockDeltas;
-				delete[] omitValLookup;
 				return false; // Failed to compress-encode FFT vals
 			} else {
 				size_t sizeAfter = out.GetByteSize();
@@ -271,11 +269,6 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 				DLOG("Encode-compressed FFT vals to " << (100.f * encodedFFTValsSize / fftData.GetByteSize()) << "% original size");
 			}
 		}
-
-		delete[] blockDeltas;
-
-		if (flags & FLAG_OMIT_FFT_VALS)
-			delete[] omitValLookup;
 	}
 
 	if (flags & FLAG_ZLIB_COMPRESSION) {
@@ -333,10 +326,11 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 
 		size_t totalValsToRead = TOTAL_VAL_AMOUNT;
 
-		bool* omitValLookup = NULL;
+		ScopeMem<bool> omitValLookup = NULL;
 		if (header.flags & FLAG_OMIT_FFT_VALS) {
 			// Deserialize omitted vals list
-			omitValLookup = new bool[TOTAL_VAL_AMOUNT];
+			omitValLookup.Alloc(TOTAL_VAL_AMOUNT);
+
 			bool bitRepeatCompressed = in.ReadBit();
 			if (bitRepeatCompressed) {
 				DataWriter decompressed;
@@ -362,9 +356,8 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 		}
 
 		size_t deltaValsAllocSize = (totalValsToRead * ZCAC_INT_VAL_BITS) / 8 + 1;
-		void* deltaVals = malloc(deltaValsAllocSize);
+		ScopeMem deltaVals = ScopeMem(deltaValsAllocSize);
 		if (!ValueArrayEncoder::Decode(in, ZCAC_INT_VAL_BITS, totalValsToRead, deltaVals)) {
-			free(deltaVals);
 			return false; // Failed to decode-decompress FFT vals
 		}
 
@@ -396,13 +389,13 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 			}
 		}
 
-		free(deltaVals);
-		
 		if (!header.samplesPerChannel || header.samplesPerChannel > (blockAmount * ZCAC_FFT_SIZE))
 			return false; // Invalid samples per channel
 
 		// Write to channel
-		float* audioDataOutBuffer = new float[header.samplesPerChannel + ZCAC_FFT_SIZE];
+		ScopeMem<float> audioDataOutBuffer = ScopeMem<float>(header.samplesPerChannel + ZCAC_FFT_SIZE);
+		audioDataOutBuffer.MakeZero();
+
 		for (int i = 0; i < blockAmount; i++) {
 			float blockAudioOut[ZCAC_FFT_SIZE];
 			blocks[i].ToAudioData(blockAudioOut);
@@ -424,12 +417,8 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 			memcpy(&audioDataOutBuffer[realOutputIndex], blockAudioOut, ZCAC_FFT_SIZE * sizeof(float));
 		}
 
-		audioInfoOut.channelData.push_back(vector<float>(audioDataOutBuffer, audioDataOutBuffer + header.samplesPerChannel));
-		delete[] audioDataOutBuffer;
+		audioInfoOut.channelData.push_back(vector<float>(audioDataOutBuffer.data, audioDataOutBuffer + header.samplesPerChannel));
 	}
-
-	// We should be done reading now
-	//ASSERT(in.curByteIndex == in.dataSize || in.curByteIndex == (in.dataSize - 1));
 
 	return true;
 }

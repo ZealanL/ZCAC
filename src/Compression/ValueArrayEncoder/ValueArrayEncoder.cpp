@@ -8,12 +8,9 @@ bool ValueArrayEncoder::Encode(DataReader& in, int bitsPerVal, size_t valAmount,
 	int extraBitsPerVal = bitsPerVal % 8; // Bits that aren't filling a full byte
 
 	// Full bytes of each value
-	byte* fullBytesOut;
-	if (fullBytesPerVal > 0) {
-		fullBytesOut = (byte*)malloc(valAmount * fullBytesPerVal);
-	} else {
-		fullBytesOut = NULL;
-	}
+	ScopeMem fullBytesOut;
+	if (fullBytesPerVal > 0)
+		fullBytesOut.Alloc(valAmount * fullBytesPerVal);
 
 	DataWriter extraBitsOut;
 
@@ -36,8 +33,6 @@ bool ValueArrayEncoder::Encode(DataReader& in, int bitsPerVal, size_t valAmount,
 	}
 
 	if (in.overflowed) {
-		if (fullBytesOut)
-			free(fullBytesOut);
 		return false;
 	} else {
 		DataWriter encodedDataOut;
@@ -47,9 +42,6 @@ bool ValueArrayEncoder::Encode(DataReader& in, int bitsPerVal, size_t valAmount,
 		encodedDataOut.Append(extraBitsOut); // AAA
 		if (!encodedDataOut.Compress()) // AAA
 			return false; // Failed to compress // AAA
-
-		if (fullBytesOut)
-			free(fullBytesOut);
 
 		out.AlignToByte();
 		out.Append(encodedDataOut);

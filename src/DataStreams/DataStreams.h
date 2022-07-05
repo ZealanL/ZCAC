@@ -1,5 +1,6 @@
 #pragma once
 #include "../Framework.h"
+#include "../ScopeMem/ScopeMem.h"
 
 // For reading data from file bytes
 struct DataReader {
