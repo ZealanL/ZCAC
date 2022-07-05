@@ -170,3 +170,13 @@ bool DataWriter::WriteToFile(string path) {
 
 	return true;
 }
+
+void DataWriter::WriteToMemory(void* outMemory) {
+	if (GetBitSize() >= 8)
+		memcpy(outMemory, &resultBytes.front(), resultBytes.size());
+	
+	if (curBitOffset) {
+		byte* lastBytePtr = (byte*)outMemory + resultBytes.size();
+		*lastBytePtr = curByteBuf;
+	}
+}

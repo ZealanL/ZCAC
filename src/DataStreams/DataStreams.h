@@ -175,4 +175,7 @@ struct DataWriter {
 	bool Compress();
 
 	bool WriteToFile(string path);
+
+	// NOTE: outMemory must have at least this->GetByteSize() bytes
+	void WriteToMemory(void* outMemory);
 };
