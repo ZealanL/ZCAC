@@ -2,6 +2,7 @@
 #include "../Compression/Huffman/Huffman.h"
 #include "../Compression/BitRepeater/BitRepeater.h"
 #include "Config/Config.h"
+#include "../Compression/ValueArrayEncoder/ValueArrayEncoder.h"
 
 ZCAC::FFTBlock ZCAC::FFTBlock::FromAudioData(const float* audioData) {
 
@@ -201,10 +202,7 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 			out.Append(lookupTableData);
 		}
 
-		// Make huffman freq map of all fft complex delta vals
-		Huffman::Tree::FrequencyMap fftDeltaFreqMap;
-
-		// Build block deltas (and also delta freq map)
+		// Build block deltas
 		// part/block/slot
 		uint16 lastVals[ZCAC_FFT_SIZE_STORAGE] = {};
 		for (int iPart = 0, totalLookupIndex = 0; iPart < 2; iPart++) {
@@ -226,38 +224,12 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 					uint16 delta = (val - lastVals[iSlot]) & ZCAC_INT_VAL_MAX;
 
 					blockDeltas[blockDeltaIndex] = delta;
-
-					fftDeltaFreqMap[delta]++;
-
 					lastVals[iSlot] = val;
 				}
 			}
 		}
 
-		Huffman::Tree huffTree = Huffman::Tree(fftDeltaFreqMap);
-
-		size_t totalHuffBits = 0;
-		for (auto& pair : huffTree.encodingMap)
-			totalHuffBits += fftDeltaFreqMap[pair.first] * pair.second.bitLength;
-
-		DataWriter freqMapWriter;
-		Huffman::Tree::SerializeFreqMap(fftDeltaFreqMap, freqMapWriter);
-
-		float huffCompressionRatio = (totalHuffBits + freqMapWriter.GetBitSize()) / (float)(TOTAL_VAL_AMOUNT * ZCAC_INT_VAL_BITS);
-
-		DLOG("Huffman compression ratio: " << huffCompressionRatio);
-
-		bool encodeHuffman = huffCompressionRatio < 1;
-
-		if (encodeHuffman) {
-			DLOG(" > Encoding via Huffman...");
-			out.WriteBit(1);
-
-			out.Append(freqMapWriter);
-		} else {
-			DLOG(" > NOT using Huffman, encoding raw...");
-			out.WriteBit(0);
-		}
+		DataWriter fftData;
 
 		size_t valsWritten = 0;
 		// part/slot/block
@@ -274,15 +246,29 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 							continue;
 					}
 
-					if (encodeHuffman) {
-						Huffman::EncodedValBits& huffBits = huffTree.encodingMap[blockDeltas[totalIndex]];
-						out.WriteBits(huffBits.data, huffBits.bitLength);
-					} else {
-						out.WriteBits(blockDeltas[totalIndex], ZCAC_INT_VAL_BITS);
-					}
+					fftData.WriteBits(blockDeltas[totalIndex], ZCAC_INT_VAL_BITS);
 
 					valsWritten++;
 				}
+			}
+		}
+
+		fftData.AlignToByte();
+
+		{ // Compress via ValueArrayEncoder
+			DataReader tempReader = DataReader(fftData.resultBytes);
+			size_t sizeBefore = out.GetByteSize();
+			
+			if (!ValueArrayEncoder::Encode(tempReader, ZCAC_INT_VAL_BITS, valsWritten, out)) {
+				
+				delete[] blockDeltas;
+				delete[] omitValLookup;
+				return false; // Failed to compress-encode FFT vals
+			} else {
+				size_t sizeAfter = out.GetByteSize();
+
+				size_t encodedFFTValsSize = sizeAfter - sizeBefore;
+				DLOG("Encode-compressed FFT vals to " << (100.f * encodedFFTValsSize / fftData.GetByteSize()) << "% original size");
 			}
 		}
 
@@ -336,7 +322,6 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 		vector<FFTBlock> blocks;
 		for (int j = 0; j < blockAmount; j++) {
 			FFTBlock curBlock;
-
 			// Read range
 			curBlock.rangeMin = in.Read<float>();
 			curBlock.rangeMax = in.Read<float>();
@@ -346,11 +331,12 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 
 		size_t TOTAL_VAL_AMOUNT = ZCAC_FFT_SIZE_STORAGE * blocks.size() * 2;
 
+		size_t totalValsToRead = TOTAL_VAL_AMOUNT;
+
 		bool* omitValLookup = NULL;
 		if (header.flags & FLAG_OMIT_FFT_VALS) {
 			// Deserialize omitted vals list
 			omitValLookup = new bool[TOTAL_VAL_AMOUNT];
-
 			bool bitRepeatCompressed = in.ReadBit();
 			if (bitRepeatCompressed) {
 				DataWriter decompressed;
@@ -369,23 +355,20 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 				for (int i = 0; i < TOTAL_VAL_AMOUNT; i++)
 					omitValLookup[i] = in.ReadBit();
 			}
+
+			for (int i = 0; i < TOTAL_VAL_AMOUNT; i++)
+				if (omitValLookup[i])
+					totalValsToRead--;
 		}
 
-		bool huffmanEncodedVals = in.ReadBit();
-
-		Huffman::Tree::FrequencyMap huffFreqMap;
-		Huffman::Tree huffTree;
-		if (huffmanEncodedVals) {
-			if (!Huffman::Tree::DeserializeFreqMap(huffFreqMap, in))
-				return false; // Failed to read huffman frequency map
-
-			huffTree.SetFreqMap(huffFreqMap);
-		} else {
-			if (!(header.flags & FLAG_OMIT_FFT_VALS)) {
-				size_t valsRemaining = in.GetNumBitsLeft() / ZCAC_INT_VAL_BITS;
-				ASSERT(valsRemaining == TOTAL_VAL_AMOUNT);
-			}
+		size_t deltaValsAllocSize = (totalValsToRead * ZCAC_INT_VAL_BITS) / 8 + 1;
+		void* deltaVals = malloc(deltaValsAllocSize);
+		if (!ValueArrayEncoder::Decode(in, ZCAC_INT_VAL_BITS, totalValsToRead, deltaVals)) {
+			free(deltaVals);
+			return false; // Failed to decode-decompress FFT vals
 		}
+
+		DataReader deltaValsReader = DataReader(deltaVals, deltaValsAllocSize);
 
 		// Read vals
 		uint16 lastVals[ZCAC_FFT_SIZE_STORAGE] = {};
@@ -405,21 +388,15 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 						
 					}
 
-					uint16 deltaVal;
-					if (huffmanEncodedVals) {
-						deltaVal = huffTree.ReadEncodedVal(in);
-					} else {
-						deltaVal = in.ReadBits<uint16>(ZCAC_INT_VAL_BITS);
-					}
+					uint16 deltaVal = deltaValsReader.ReadBits<uint16>(ZCAC_INT_VAL_BITS);
 
 					lastVals[iSlot] = (lastVals[iSlot] + deltaVal) & ZCAC_INT_VAL_MAX;
 					blocks[iBlock].data[iSlot][iPart] = lastVals[iSlot];
 				}
-
-				if (in.overflowed)
-					return false; // Overflowed while trying to read
 			}
 		}
+
+		free(deltaVals);
 		
 		if (!header.samplesPerChannel || header.samplesPerChannel > (blockAmount * ZCAC_FFT_SIZE))
 			return false; // Invalid samples per channel
@@ -452,7 +429,7 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 	}
 
 	// We should be done reading now
-	ASSERT(in.curByteIndex == in.dataSize || in.curByteIndex == (in.dataSize - 1));
+	//ASSERT(in.curByteIndex == in.dataSize || in.curByteIndex == (in.dataSize - 1));
 
 	return true;
 }

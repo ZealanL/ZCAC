@@ -26,6 +26,9 @@ SASSERT(ZCAC_INT_VAL_BITS <= 16);
 // FFT size for storing our FFT result (due to hermitian symmetry)
 #define ZCAC_FFT_SIZE_STORAGE (ZCAC_FFT_SIZE / 2 + 1)
 
+// Maximum FFT blocks to allocate at once
+#define ZCAC_FFT_BLOCK_MAX_ALLOC ((1024 * 1024 * 1024) / ZCAC_FFT_SIZE)
+
 // Must be a power of two
 SASSERT(!(ZCAC_FFT_SIZE& (ZCAC_FFT_SIZE - 1)));
 
