@@ -79,6 +79,7 @@ vector<byte> DataReader::Decompress() {
 	} else {
 		auto resultBytes = vector<byte>(decompressedBuffer, decompressedBuffer + decompressedSize);
 		free(decompressedBuffer);
+		curByteIndex += decompressedSize;
 		return resultBytes;
 	}
 }
