@@ -49,6 +49,13 @@ bool DataReader::ReadBytes(void* output, size_t amount) {
 	}
 }
 
+void DataReader::AlignToByte() {
+	if (curBitOffset) {
+		curBitOffset = 0;
+		curByteIndex++;
+	}
+}
+
 vector<byte> DataReader::Decompress() {
 	ASSERT(curBitOffset == 0);
 	curBitOffset = 0;
@@ -112,12 +119,15 @@ bool DataWriter::GetBitAt(size_t bitIndex) {
 	}
 }
 
-bool DataWriter::Compress() {
+void DataWriter::AlignToByte() {
 	if (curBitOffset) {
-		// Finish in-progress byte
 		resultBytes.push_back(curByteBuf);
 		curBitOffset = 0;
 	}
+}
+
+bool DataWriter::Compress() {
+	AlignToByte();
 
 	size_t compressedMaxSize = compressBound(resultBytes.size());
 	byte* compressedBytes = (byte*)malloc(compressedMaxSize);

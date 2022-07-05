@@ -76,6 +76,9 @@ struct DataReader {
 
 	bool ReadBytes(void* output, size_t amount);
 
+	// Align cursor to next byte index with no bit offset if reading between bytes
+	void AlignToByte();
+
 	template<typename T>
 	T Read(T defaultReturn = T{}) {
 		T result = defaultReturn;
@@ -165,6 +168,9 @@ struct DataWriter {
 
 	// Will just return 0 if index is out-of-bounds
 	bool GetBitAt(size_t bitIndex);
+
+	// If current byte is partially complete, pads with 0 bits until the next byte
+	void AlignToByte();
 
 	bool Compress();
 
