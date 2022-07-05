@@ -39,12 +39,12 @@ struct DataReader {
 		return GetNumBytesRead() * 8 + curBitOffset;
 	}
 
-	size_t AmountBitsLeft() {
+	size_t GetNumBitsLeft() {
 		return IsDone() ? 0 : (dataSize * 8 - GetNumBitsRead());
 	}
 
-	size_t AmountBytesLeft() {
-		return AmountBitsLeft() / 8;
+	size_t GetNumBytesLeft() {
+		return GetNumBitsLeft() / 8;
 	}
 
 	bool ReadBit();

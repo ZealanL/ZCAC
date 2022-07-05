@@ -323,8 +323,8 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 		// Attempt to decompress
 		decompressedBytes = in.Decompress();
 		if (!decompressedBytes.empty()) {
-			DLOG("Decompressed from " << in.AmountBytesLeft() << " bytes to " << decompressedBytes.size()
-				<< " bytes (->" << (int)(100.f * decompressedBytes.size() / in.AmountBytesLeft()) << "%)");
+			DLOG("Decompressed from " << in.GetNumBytesLeft() << " bytes to " << decompressedBytes.size()
+				<< " bytes (->" << (int)(100.f * decompressedBytes.size() / in.GetNumBytesLeft()) << "%)");
 			in = DataReader(decompressedBytes);
 		} else {
 			DLOG("Failed to decompress, proceeding anyway.");
@@ -382,7 +382,7 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 			huffTree.SetFreqMap(huffFreqMap);
 		} else {
 			if (!(header.flags & FLAG_OMIT_FFT_VALS)) {
-				size_t valsRemaining = in.AmountBitsLeft() / ZCAC_INT_VAL_BITS;
+				size_t valsRemaining = in.GetNumBitsLeft() / ZCAC_INT_VAL_BITS;
 				ASSERT(valsRemaining == TOTAL_VAL_AMOUNT);
 			}
 		}

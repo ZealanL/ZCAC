@@ -23,7 +23,7 @@ bool DataReader::ReadBit() {
 bool DataReader::ReadBytes(void* output, size_t amount) {
 	ASSERT(amount > 0);
 
-	if (amount > AmountBytesLeft()) {
+	if (amount > GetNumBytesLeft()) {
 		// Not enough data left
 		overflowed = true;
 		curByteIndex = dataSize;
@@ -62,7 +62,7 @@ vector<byte> DataReader::Decompress() {
 		return vector<byte>();
 	}
 
-	int result = uncompress(decompressedBuffer, &decompressedSize, data + curByteIndex, AmountBytesLeft());
+	int result = uncompress(decompressedBuffer, &decompressedSize, data + curByteIndex, GetNumBytesLeft());
 
 	curByteIndex = backupCurByteIndex;
 
