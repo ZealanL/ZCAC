@@ -30,6 +30,8 @@ vector<byte> FileToBytes(string path) {
 }
 
 int main(int argc, char* argv[]) {
+
+
 	string filePath;
 	if (argc > 1) {
 		filePath = argv[1];
