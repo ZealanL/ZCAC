@@ -143,13 +143,10 @@ bool DataWriter::Compress() {
 
 	uint32 originalSize = resultBytes.size();
 	resultBytes.clear();
-	curBitOffset = 0;
 	Write<uint32>(originalSize);
 	WriteBytes(compressedBytes, compressedSize);
 
 	free(compressedBytes);
-
-	curBitOffset = 0;
 	return true;
 }
 
