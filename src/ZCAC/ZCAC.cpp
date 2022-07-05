@@ -153,6 +153,9 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 			size_t totalValsOmitted = 0;
 			omitValLookup = new bool[TOTAL_VAL_AMOUNT];
 
+			// Division of STDV a value must be within to be skipped
+			float stdvDiv = 4 + (config.quality * 0.75f);
+
 			// part/block/slot
 			for (int iPart = 0, totalLookupIndex = 0; iPart < 2; iPart++) {
 				for (int iBlock = 0; iBlock < blocks.size(); iBlock++) {
@@ -166,7 +169,7 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 						float valF = blocks[iBlock].data[iSlot][iPart] / (float)ZCAC_INT_VAL_MAX;
 						float dev = abs(valF - avg);
 
-						bool shouldSkip = (dev < (stdv / 4)); // TODO: Don't use hardcoded std portion
+						bool shouldSkip = dev < (stdv / stdvDiv);
 
 						omitValLookup[totalLookupIndex] = shouldSkip;
 
@@ -415,7 +418,7 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 			}
 		}
 		// We should be done reading now
-		ASSERT(in.curByteIndex == (in.dataSize - 1));
+		ASSERT(in.curByteIndex == in.dataSize || in.curByteIndex == (in.dataSize - 1));
 
 		if (!header.samplesPerChannel || header.samplesPerChannel > (blocks.size() * ZCAC_FFT_SIZE))
 			return false; // Invalid samples per channel
