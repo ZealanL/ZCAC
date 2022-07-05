@@ -61,6 +61,10 @@ void ZCAC::FFTBlock::ToAudioData(float* audioDataOut) {
 	}
 }
 
+float ZCAC::FFTBlock::GetZeroVolF() {
+	return -rangeMin / (rangeMax - rangeMin);
+}
+
 float ZCAC::FFTBlock::GetAverageF() {
 	float total = 0;
 	for (ComplexInts& complexInts : data) {
@@ -206,9 +210,7 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 					size_t blockDeltaIndex =
 						(iPart * (TOTAL_VAL_AMOUNT / 2)) + (iSlot * blocks.size()) + iBlock;
 
-					ComplexInts& curComplexInts = blocks[iBlock].data[iSlot];
-
-					uint16 val = iPart ? curComplexInts.imag : curComplexInts.real;
+					uint16 val = blocks[iBlock].data[iSlot][iPart];
 
 					ASSERT(val <= ZCAC_INT_VAL_MAX);
 
@@ -380,26 +382,22 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 			}
 		}
 
-		size_t valsRead = 0;
+		// Read vals
 		uint16 lastVals[ZCAC_FFT_SIZE_STORAGE] = {};
 		// part/slot/block
 		for (int iPart = 0; iPart < 2; iPart++) {
 			for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++) {
 				for (int iBlock = 0; iBlock < blocks.size(); iBlock++) {
-
-					ComplexInts& curComplexInts = blocks[iBlock].data[iSlot];
-
 					if (header.flags & FLAG_OMIT_FFT_VALS) {
 						// part/block/slot
 						size_t omitValIndex =
 							(iPart * (TOTAL_VAL_AMOUNT / 2)) + (iBlock * ZCAC_FFT_SIZE_STORAGE) + iSlot;
 
 						if (omitValLookup[omitValIndex]) {
-							// This value is skipped
-							float emptyValF = -blocks[iBlock].rangeMin / (blocks[iBlock].rangeMax - blocks[iBlock].rangeMin);
-							(iPart ? curComplexInts.imag : curComplexInts.real) = emptyValF * ZCAC_INT_VAL_MAX;
+							blocks[iBlock].data[iSlot][iPart] = blocks[iBlock].GetZeroVolF() * ZCAC_INT_VAL_MAX;
 							continue;
 						}
+						
 					}
 
 					uint16 deltaVal;
@@ -410,16 +408,13 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 					}
 
 					lastVals[iSlot] = (lastVals[iSlot] + deltaVal) & ZCAC_INT_VAL_MAX;
-
-					(iPart ? curComplexInts.imag : curComplexInts.real) = lastVals[iSlot];
-					valsRead++;
+					blocks[iBlock].data[iSlot][iPart] = lastVals[iSlot];
 				}
 
 				if (in.overflowed)
 					return false; // Overflowed while trying to read
 			}
 		}
-
 		// We should be done reading now
 		ASSERT(in.curByteIndex == (in.dataSize - 1));
 

@@ -66,6 +66,10 @@ namespace ZCAC {
 				imag / (Math::Complex::value_type)ZCAC_INT_VAL_MAX,
 			};
 		}
+
+		uint16& operator[](size_t index) {
+			return index ? imag : real;
+		}
 	};
 
 	struct FFTBlock {
@@ -75,6 +79,9 @@ namespace ZCAC {
 
 		static FFTBlock FromAudioData(const float* audioData);
 		void ToAudioData(float* audioDataOut);
+
+		// Gets what would be a 0 complex value, accounting for our range
+		float GetZeroVolF();
 
 		float GetAverageF();
 		float GetStandardDeviationF();
