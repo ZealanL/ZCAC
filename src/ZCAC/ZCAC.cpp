@@ -164,13 +164,13 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 				for (int iBlock = 0; iBlock < blockAmount; iBlock++) {
 					FFTBlock& block = blocks[iBlock];
 					float
-						avg = block.GetAverageF(),
+						base = block.GetZeroVolF(),
 						stdv = block.GetStandardDeviationF();
 
 					for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++, totalLookupIndex++) {
 						ComplexInts& curComplexInts = blocks[iBlock].data[iSlot];
 						float valF = blocks[iBlock].data[iSlot][iPart] / (float)ZCAC_INT_VAL_MAX;
-						float dev = abs(valF - avg);
+						float dev = abs(valF - base);
 
 						bool shouldSkip = dev < (stdv / stdvDiv);
 
