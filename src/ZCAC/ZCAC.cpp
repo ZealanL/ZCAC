@@ -244,9 +244,9 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 
 		DLOG("Huffman compression ratio: " << huffCompressionRatio);
 
-		bool encodeHuffman = huffCompressionRatio < 1 && false;
+		bool encodeHuffman = huffCompressionRatio < 1;
 
-		if (encodeHuffman && false) {
+		if (encodeHuffman) {
 			DLOG(" > Encoding via Huffman...");
 			out.WriteBit(1);
 
