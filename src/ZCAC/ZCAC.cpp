@@ -417,9 +417,7 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 					return false; // Overflowed while trying to read
 			}
 		}
-		// We should be done reading now
-		ASSERT(in.curByteIndex == in.dataSize || in.curByteIndex == (in.dataSize - 1));
-
+		
 		if (!header.samplesPerChannel || header.samplesPerChannel > (blocks.size() * ZCAC_FFT_SIZE))
 			return false; // Invalid samples per channel
 
@@ -449,6 +447,9 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 		audioInfoOut.channelData.push_back(vector<float>(audioDataOutBuffer, audioDataOutBuffer + header.samplesPerChannel));
 		delete[] audioDataOutBuffer;
 	}
+
+	// We should be done reading now
+	ASSERT(in.curByteIndex == in.dataSize || in.curByteIndex == (in.dataSize - 1));
 
 	return true;
 }
