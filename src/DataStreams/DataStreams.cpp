@@ -122,7 +122,7 @@ bool DataWriter::Compress() {
 	size_t compressedMaxSize = compressBound(resultBytes.size());
 	byte* compressedBytes = (byte*)malloc(compressedMaxSize);
 
-	uLong compressedSize;
+	uLong compressedSize = compressedMaxSize;
 	int result = compress2(compressedBytes, &compressedSize, &resultBytes.front(), resultBytes.size(), Z_BEST_COMPRESSION);
 
 	if (result != Z_OK) {
