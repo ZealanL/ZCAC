@@ -128,8 +128,11 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 				blocks.push_back(ZCAC::FFTBlock::FromAudioData(paddedData));
 			}
 		}
+
+		size_t blockAmount = blocks.size();
+
 		// Write block amount
-		out.Write<uint32>(blocks.size());
+		out.Write<uint32>(blockAmount);
 
 		// Write block ranges
 		for (auto& block : blocks) {
@@ -137,7 +140,7 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 			out.Write<float>(block.rangeMax);
 		}
 
-		size_t TOTAL_VAL_AMOUNT = ZCAC_FFT_SIZE_STORAGE * blocks.size() * 2;
+		size_t TOTAL_VAL_AMOUNT = ZCAC_FFT_SIZE_STORAGE * blockAmount * 2;
 
 		// Create block deltas - these will store the deltas of each FFT slot from one block to the next
 		// Order is part/slot/block, because FFT values of a specific slot tend to change semi-consistently from one block to another
@@ -154,11 +157,11 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 			omitValLookup = new bool[TOTAL_VAL_AMOUNT];
 
 			// Division of STDV a value must be within to be skipped
-			float stdvDiv = 4 + (config.quality * 0.75f);
+			float stdvDiv = 4 + (config.quality * 1.7f);
 
 			// part/block/slot
 			for (int iPart = 0, totalLookupIndex = 0; iPart < 2; iPart++) {
-				for (int iBlock = 0; iBlock < blocks.size(); iBlock++) {
+				for (int iBlock = 0; iBlock < blockAmount; iBlock++) {
 					FFTBlock& block = blocks[iBlock];
 					float
 						avg = block.GetAverageF(),
@@ -205,7 +208,7 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 		// part/block/slot
 		uint16 lastVals[ZCAC_FFT_SIZE_STORAGE] = {};
 		for (int iPart = 0, totalLookupIndex = 0; iPart < 2; iPart++) {
-			for (int iBlock = 0; iBlock < blocks.size(); iBlock++) {
+			for (int iBlock = 0; iBlock < blockAmount; iBlock++) {
 				for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++, totalLookupIndex++) {
 
 					// part/slot/block
@@ -260,7 +263,7 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 		// part/slot/block
 		for (int iPart = 0, totalIndex = 0; iPart < 2; iPart++) {
 			for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++) {
-				for (int iBlock = 0; iBlock < blocks.size(); iBlock++, totalIndex++) {
+				for (int iBlock = 0; iBlock < blockAmount; iBlock++, totalIndex++) {
 
 					if (flags & FLAG_OMIT_FFT_VALS) {
 						// part/block/slot
@@ -330,7 +333,7 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 
 	for (int channelIndex = 0; channelIndex < header.numChannels; channelIndex++) {
 		uint32 blockAmount = in.Read<uint32>();
-		vector<FFTBlock> blocks; // Not reserving space incase blockAmount is invalid/corrupt
+		vector<FFTBlock> blocks;
 		for (int j = 0; j < blockAmount; j++) {
 			FFTBlock curBlock;
 
@@ -389,7 +392,7 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 		// part/slot/block
 		for (int iPart = 0; iPart < 2; iPart++) {
 			for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++) {
-				for (int iBlock = 0; iBlock < blocks.size(); iBlock++) {
+				for (int iBlock = 0; iBlock < blockAmount; iBlock++) {
 					if (header.flags & FLAG_OMIT_FFT_VALS) {
 						// part/block/slot
 						size_t omitValIndex =
@@ -418,12 +421,12 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 			}
 		}
 		
-		if (!header.samplesPerChannel || header.samplesPerChannel > (blocks.size() * ZCAC_FFT_SIZE))
+		if (!header.samplesPerChannel || header.samplesPerChannel > (blockAmount * ZCAC_FFT_SIZE))
 			return false; // Invalid samples per channel
 
 		// Write to channel
 		float* audioDataOutBuffer = new float[header.samplesPerChannel + ZCAC_FFT_SIZE];
-		for (int i = 0; i < blocks.size(); i++) {
+		for (int i = 0; i < blockAmount; i++) {
 			float blockAudioOut[ZCAC_FFT_SIZE];
 			blocks[i].ToAudioData(blockAudioOut);
 

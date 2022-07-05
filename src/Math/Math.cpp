@@ -17,9 +17,12 @@ void Math::FastFourierTransform(Complex* vals, uint32 amount) {
 		for (uint32 l = 0; l < k; l++) {
 			for (uint32 a = l; a < amount; a += n) {
 				uint32 b = a + k;
-				Complex t = vals[a] - vals[b];
-				vals[a] += vals[b];
-				vals[b] = t * T;
+
+				Math::Complex& va = vals[a], &vb = vals[b];
+
+				Complex t = va - vb;
+				va += vb;
+				vb = t * T;
 			}
 			T *= phiT;
 		}
@@ -36,10 +39,13 @@ void Math::FastFourierTransform(Complex* vals, uint32 amount) {
 		b = (((b & 0xff00ff00) >> 8) | ((b & 0x00ff00ff) << 8));
 		b = ((b >> 16) | (b << 16)) >> (32 - m);
 		if (b > a) {
+
+			Math::Complex& va = vals[a], &vb = vals[b];
+
 			// Swap
-			Complex t = vals[a];
-			vals[a] = vals[b];
-			vals[b] = t;
+			Complex t = va;
+			va = vb;
+			vb = t;
 		}
 	}
 }
