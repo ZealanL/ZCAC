@@ -143,11 +143,6 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 
 		size_t TOTAL_VAL_AMOUNT = ZCAC_FFT_SIZE_STORAGE * blockAmount * 2;
 
-		// Create block deltas - these will store the deltas of each FFT slot from one block to the next
-		// Order is part/slot/block, because FFT values of a specific slot tend to change semi-consistently from one block to another
-		ScopeMem<uint16> blockDeltas = ScopeMem<uint16>(TOTAL_VAL_AMOUNT);
-		blockDeltas.MakeZero();
-
 		// If we are omitting FFT vals, this will store whether or not each FFT value is omitted
 		// Order is part/block/slot because this produces long sets of repeated bits, which makes them easier to compress
 		ScopeMem<bool> omitValLookup;
@@ -203,53 +198,21 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 			out.Append(lookupTableData);
 		}
 
-		// Build block deltas
+		// Write FFT block values
 		// part/block/slot
-		uint16 lastVals[ZCAC_FFT_SIZE_STORAGE] = {};
+		DataWriter fftData;
+		size_t totalValsWritten = 0;
 		for (int iPart = 0, totalLookupIndex = 0; iPart < 2; iPart++) {
 			for (int iBlock = 0; iBlock < blockAmount; iBlock++) {
 				for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++, totalLookupIndex++) {
-
-					// part/slot/block
-					size_t blockDeltaIndex =
-						(iPart * (TOTAL_VAL_AMOUNT / 2)) + (iSlot * blocks.size()) + iBlock;
-
-					uint16 val = blocks[iBlock].data[iSlot][iPart];
-
-					ASSERT(val <= ZCAC_INT_VAL_MAX);
-
 					if (flags & FLAG_OMIT_FFT_VALS)
 						if (omitValLookup[totalLookupIndex])
 							continue;
 
-					uint16 delta = (val - lastVals[iSlot]) & ZCAC_INT_VAL_MAX;
-
-					blockDeltas[blockDeltaIndex] = delta;
-					lastVals[iSlot] = val;
-				}
-			}
-		}
-
-		DataWriter fftData;
-
-		size_t valsWritten = 0;
-		// part/slot/block
-		for (int iPart = 0, totalIndex = 0; iPart < 2; iPart++) {
-			for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++) {
-				for (int iBlock = 0; iBlock < blockAmount; iBlock++, totalIndex++) {
-
-					if (flags & FLAG_OMIT_FFT_VALS) {
-						// part/block/slot
-						size_t omitLookupIndex =
-							(iPart * (TOTAL_VAL_AMOUNT / 2)) + (iBlock * ZCAC_FFT_SIZE_STORAGE) + iSlot;
-
-						if (omitValLookup[omitLookupIndex])
-							continue;
-					}
-
-					fftData.WriteBits(blockDeltas[totalIndex], ZCAC_INT_VAL_BITS);
-
-					valsWritten++;
+					uint16 val = blocks[iBlock].data[iSlot][iPart];
+					ASSERT(val <= ZCAC_INT_VAL_MAX);
+					fftData.WriteBits(val, ZCAC_INT_VAL_BITS);
+					totalValsWritten++;
 				}
 			}
 		}
@@ -260,7 +223,7 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 			DataReader tempReader = DataReader(fftData.resultBytes);
 			size_t sizeBefore = out.GetByteSize();
 			
-			if (!ValueArrayEncoder::Encode(tempReader, ZCAC_INT_VAL_BITS, valsWritten, out)) {
+			if (!ValueArrayEncoder::Encode(tempReader, ZCAC_INT_VAL_BITS, totalValsWritten, out)) {
 				return false; // Failed to compress-encode FFT vals
 			} else {
 				size_t sizeAfter = out.GetByteSize();
@@ -364,27 +327,21 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 		DataReader deltaValsReader = DataReader(deltaVals, deltaValsAllocSize);
 
 		// Read vals
-		uint16 lastVals[ZCAC_FFT_SIZE_STORAGE] = {};
-		// part/slot/block
-		for (int iPart = 0; iPart < 2; iPart++) {
-			for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++) {
-				for (int iBlock = 0; iBlock < blockAmount; iBlock++) {
+		// part/block/slot
+		for (int iPart = 0, totalIndex =0; iPart < 2; iPart++) {
+			for (int iBlock = 0; iBlock < blockAmount; iBlock++) {
+				for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++, totalIndex++) {
 					if (header.flags & FLAG_OMIT_FFT_VALS) {
-						// part/block/slot
-						size_t omitValIndex =
-							(iPart * (TOTAL_VAL_AMOUNT / 2)) + (iBlock * ZCAC_FFT_SIZE_STORAGE) + iSlot;
-
-						if (omitValLookup[omitValIndex]) {
+						if (omitValLookup[totalIndex]) {
+							// Make value empty
 							blocks[iBlock].data[iSlot][iPart] = blocks[iBlock].GetZeroVolF() * ZCAC_INT_VAL_MAX;
 							continue;
 						}
 						
 					}
 
-					uint16 deltaVal = deltaValsReader.ReadBits<uint16>(ZCAC_INT_VAL_BITS);
-
-					lastVals[iSlot] = (lastVals[iSlot] + deltaVal) & ZCAC_INT_VAL_MAX;
-					blocks[iBlock].data[iSlot][iPart] = lastVals[iSlot];
+					uint16 val = deltaValsReader.ReadBits<uint16>(ZCAC_INT_VAL_BITS);
+					blocks[iBlock].data[iSlot][iPart] = val;
 				}
 			}
 		}
