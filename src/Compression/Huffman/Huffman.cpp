@@ -62,9 +62,9 @@ void Huffman::Tree::BuildMapRecursive(Node* curNode, EncodedValBits curBits) {
 
 		BuildMapRecursive(curNode->left, leftVal);
 		BuildMapRecursive(curNode->right, rightVal);
-
 	} else {
 		ASSERT(curBits.bitLength > 0);
+
 		// Value node, add to map
 		encodingMap[curNode->data] = curBits;
 	}
@@ -73,6 +73,10 @@ void Huffman::Tree::BuildMapRecursive(Node* curNode, EncodedValBits curBits) {
 Huffman::Tree::Tree(const FrequencyMap& freqMap) {
 	FreeNodeRecursive(root);
 	SetFreqMap(freqMap);
+
+	// Just a single value? still write a 0
+	if (root && !root->HasChildren())
+		encodingMap[root->data].AddBit(0);
 }
 
 bool Huffman::Tree::SetFreqMap(const FrequencyMap& freqMap) {
