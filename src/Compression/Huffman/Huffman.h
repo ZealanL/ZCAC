@@ -20,8 +20,6 @@ namespace Huffman {
 		size_t bitLength = 0;
 
 		void AddBit(bool val);
-
-		void Fart() const {}
 	};
 
 	class Tree {
