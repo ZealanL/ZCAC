@@ -182,7 +182,7 @@
     <ClCompile Include="src\Compression\BitRepeater\BitRepeater.cpp" />
     <ClCompile Include="src\Compression\Huffman\Huffman.cpp" />
     <ClCompile Include="src\DataStreams\DataStreams.cpp" />
-    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\examplemain.cpp" />
     <ClCompile Include="src\Math\Math.cpp" />
     <ClCompile Include="src\WaveIO\WaveIO.cpp" />
     <ClCompile Include="src\ZCAC\ZCAC.cpp" />
