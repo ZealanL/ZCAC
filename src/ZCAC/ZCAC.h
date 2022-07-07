@@ -90,6 +90,7 @@ namespace ZCAC {
 
 		float GetAverageF();
 		float GetStandardDeviationF();
+		float GetUniformDeviationF();
 	};
 
 	bool Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Config config);

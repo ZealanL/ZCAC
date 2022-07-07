@@ -97,6 +97,18 @@ float ZCAC::FFTBlock::GetStandardDeviationF() {
 	return sqrtf(sqDeltaSum / (ZCAC_FFT_SIZE_STORAGE * 2));
 }
 
+float ZCAC::FFTBlock::GetUniformDeviationF() {
+	float avg = GetAverageF();
+	float deltaSum = 0;
+	for (ComplexInts& complexInts : data) {
+		auto complex = complexInts.ToComplex();
+		for (int i = 0; i < 2; i++)
+			deltaSum += abs(complex._Val[i] - avg);
+	}
+
+	return deltaSum / (ZCAC_FFT_SIZE_STORAGE * 2);
+}
+
 ////////////////////////////////
 
 #pragma pack(push, 1) // No alignment padding for this struct
@@ -160,8 +172,8 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 			size_t totalValsOmitted = 0;
 			omitValLookup.Alloc(TOTAL_VAL_AMOUNT);
 
-			// Division of STDV a value must be within to be skipped
-			float stdvDiv = 4 + (config.quality * 1.7f);
+			// Scale of UDV a value must be within to be skipped
+			float udvCutoffScale = 2.2f / (config.quality * 1.7f);
 
 			// part/block/slot
 			for (int iPart = 0, totalLookupIndex = 0; iPart < 2; iPart++) {
@@ -169,14 +181,18 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 					FFTBlock& block = blocks[iBlock];
 					float
 						base = block.GetZeroVolF(),
-						stdv = block.GetStandardDeviationF();
+						udv = block.GetUniformDeviationF();
+
+					float udvCutoff = udv * udvCutoffScale;
+
+					udvCutoff /= powf(block.maxAmplitude, 0.4);
 
 					for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++, totalLookupIndex++) {
 						ComplexInts& curComplexInts = blocks[iBlock].data[iSlot];
 						float valF = blocks[iBlock].data[iSlot][iPart] / (float)ZCAC_INT_VAL_MAX;
 						float dev = abs(valF - base);
 
-						bool shouldSkip = dev < (stdv / stdvDiv);
+						bool shouldSkip = dev < udvCutoff;
 
 						omitValLookup[totalLookupIndex] = shouldSkip;
 
