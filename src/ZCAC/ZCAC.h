@@ -14,7 +14,7 @@
 #define ZCAC_FFT_SIZE 1024
 
 // Overlap between FFT blocks to prevent edge effects
-#define ZCAC_FFT_PAD (ZCAC_FFT_SIZE / 64)
+#define ZCAC_FFT_PAD (ZCAC_FFT_SIZE / 32)
 
 // Bits per FFT integer
 #define ZCAC_INT_VAL_BITS 9
