@@ -288,8 +288,6 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 		// Attempt to decompress
 		decompressedBytes = in.Decompress();
 		if (!decompressedBytes.empty()) {
-			DLOG("Decompressed from " << in.GetNumBytesLeft() << " bytes to " << decompressedBytes.size()
-				<< " bytes (->" << (int)(100.f * decompressedBytes.size() / in.GetNumBytesLeft()) << "%)");
 			in = DataReader(decompressedBytes);
 		} else {
 			DLOG("Failed to decompress, proceeding anyway.");
