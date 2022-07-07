@@ -222,7 +222,7 @@ bool ZCAC::Encode(const WaveIO::AudioInfo& waveAudioInfo, DataWriter& out, Confi
 		{ // Compress via ValueArrayEncoder
 			DataReader tempReader = DataReader(fftData.resultBytes);
 			size_t sizeBefore = out.GetByteSize();
-			
+
 			if (!ValueArrayEncoder::Encode(tempReader, ZCAC_INT_VAL_BITS, totalValsWritten, out)) {
 				return false; // Failed to compress-encode FFT vals
 			} else {
@@ -328,7 +328,7 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 
 		// Read vals
 		// part/block/slot
-		for (int iPart = 0, totalIndex =0; iPart < 2; iPart++) {
+		for (int iPart = 0, totalIndex = 0; iPart < 2; iPart++) {
 			for (int iBlock = 0; iBlock < blockAmount; iBlock++) {
 				for (int iSlot = 0; iSlot < ZCAC_FFT_SIZE_STORAGE; iSlot++, totalIndex++) {
 					if (header.flags & FLAG_OMIT_FFT_VALS) {
@@ -337,7 +337,7 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 							blocks[iBlock].data[iSlot][iPart] = blocks[iBlock].GetZeroVolF() * ZCAC_INT_VAL_MAX;
 							continue;
 						}
-						
+
 					}
 
 					uint16 val = deltaValsReader.ReadBits<uint16>(ZCAC_INT_VAL_BITS);
