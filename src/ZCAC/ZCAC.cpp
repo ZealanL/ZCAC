@@ -8,9 +8,16 @@ ZCAC::FFTBlock ZCAC::FFTBlock::FromAudioData(const float* audioData) {
 
 	FFTBlock result;
 
+	// Update max amplitude
 	Math::Complex fftBuffer[ZCAC_FFT_SIZE];
-	for (int i = 0; i < ZCAC_FFT_SIZE; i++)
+	for (int i = 0; i < ZCAC_FFT_SIZE; i++) {
 		fftBuffer[i] = { audioData[i], 0 };
+
+		result.maxAmplitude = MAX(result.maxAmplitude, abs(audioData[i]));
+	}	
+
+	// Make sure max amplitude isn't too low
+	result.maxAmplitude = MAX(result.maxAmplitude, 0.01);
 
 	Math::FastFourierTransform(fftBuffer, ZCAC_FFT_SIZE);
 
@@ -355,7 +362,7 @@ bool ZCAC::Decode(DataReader in, WaveIO::AudioInfo& audioInfoOut) {
 
 		for (int i = 0; i < blockAmount; i++) {
 			float blockAudioOut[ZCAC_FFT_SIZE];
-			blocks[i].ToAudioData(blockAudioOut);
+			blocks[i].ToAudioData(blockAudioOut); // AAA
 
 			int realOutputIndex = i * (ZCAC_FFT_SIZE - ZCAC_FFT_PAD);
 

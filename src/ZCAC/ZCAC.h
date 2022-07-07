@@ -80,6 +80,8 @@ namespace ZCAC {
 
 		float rangeMin = FLT_MAX, rangeMax = -FLT_MAX;
 
+		float maxAmplitude = 0;
+
 		static FFTBlock FromAudioData(const float* audioData);
 		void ToAudioData(float* audioDataOut);
 
