@@ -30,8 +30,6 @@ vector<byte> FileToBytes(string path) {
 }
 
 int main(int argc, char* argv[]) {
-
-
 	string filePath;
 	if (argc > 1) {
 		filePath = argv[1];
@@ -83,6 +81,9 @@ int main(int argc, char* argv[]) {
 	{ // Encode to file
 
 		ZCAC::Config config;
+
+		config.quality = ZCAC::Config::Quality::MEDIUM;
+		config.omitUnimportantFreqs = true;
 
 		DataWriter testOutZCAC;
 		if (ZCAC::Encode(audioInfo, testOutZCAC, config)) {
