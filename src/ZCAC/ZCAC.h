@@ -58,8 +58,8 @@ namespace ZCAC {
 		}
 
 		ComplexInts(Math::Complex complex) {
-			real = roundf(CLAMP(complex.real(), 0.f, 1.f) * ZCAC_INT_VAL_MAX);
-			imag = roundf(CLAMP(complex.imag(), 0.f, 1.f) * ZCAC_INT_VAL_MAX);
+			real = floorf(CLAMP(complex.real(), 0.f, 1.f) * ZCAC_INT_VAL_MAX);
+			imag = floorf(CLAMP(complex.imag(), 0.f, 1.f) * ZCAC_INT_VAL_MAX);
 		}
 
 
